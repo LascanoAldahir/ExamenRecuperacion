@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   wordpress1:
     image: wordpress:latest
@@ -29,7 +31,7 @@ services:
     volumes:
       - ./DATA2:/var/www/html
     depends_on:
-      - base_master
+      - base_master1
 
   wordpress3:
     image: wordpress:latest
@@ -57,14 +59,14 @@ services:
       MYSQL_DATABASE: wordpress
       MYSQL_USER: root1
       MYSQL_PASSWORD: root1
-    command: --server-id=1 --log-bin=mysql-bin --binlog-do-db=wordpress
+    command: --server-id=1 --log-bin=mysql-bin --binlog-do-db=wordpress --auto-increment-increment=2 --auto-increment-offset=1
     volumes:
       - ./sqlbaseMaestro:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
   
-  base_esclavo:
+  base_master1:
     image: mysql:5.7
-    container_name: base_esclavo
+    container_name: base_master1
     ports:
       - "3350:3306"
     environment:
@@ -72,12 +74,10 @@ services:
       MYSQL_DATABASE: wordpress
       MYSQL_USER: root1
       MYSQL_PASSWORD: root1
-    command: --server-id=2
+    command: --server-id=2 --log-bin=mysql-bin --binlog-do-db=wordpress --auto-increment-increment=2 --auto-increment-offset=2
     volumes:
-      - ./sqlbaseEsclavo:/var/lib/mysql
+      - ./sqlbaseMaestro1:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    depends_on:
-      - base_master
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -85,7 +85,7 @@ services:
     ports:
       - "8089:80"
     environment:
-      PMA_HOSTS: "base_master, base_esclavo"
+      PMA_HOSTS: "base_master, base_master1"
       PMA_ARBITRARY: 1
   
   nginx:
@@ -100,12 +100,4 @@ services:
       - wordpress2
       - wordpress3
 
-  locust:
-    image: locustio/locust
-    container_name: locust
-    ports:
-      - "8090:8089"
-    volumes:
-      - C:\Users\osmig\Desktop\examend:/mnt/locust
-    command: ["-f","/mnt/locust/locustfile.py"]
 # docker-compose up --build
